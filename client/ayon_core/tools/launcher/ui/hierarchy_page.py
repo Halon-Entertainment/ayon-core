@@ -28,13 +28,27 @@ class HierarchyPage(QtWidgets.QWidget):
 
         refresh_btn = RefreshButton(header_widget)
 
+        # Create header layout
         header_layout = QtWidgets.QHBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.addWidget(btn_back, 0)
         header_layout.addWidget(projects_combobox, 1)
         header_layout.addWidget(refresh_btn, 0)
 
-        # Body - Folders + Tasks selection
+        # Create the "create" button
+        create_button = QtWidgets.QPushButton("Create Jira Ticket")
+        create_button.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        create_button.clicked.connect(lambda: self._on_jira_ticket_clicked(self._projects_combobox.get_selected_project_name()))
+
+        # Create a layout for the "create" button
+        create_button_layout = QtWidgets.QHBoxLayout()
+        create_button_layout.setContentsMargins(0, 0, 0, 0)
+        create_button_layout.addWidget(create_button)
+
+        create_button_widget = QtWidgets.QWidget()
+        create_button_widget.setLayout(create_button_layout)
+
+        # Create content body
         content_body = QtWidgets.QSplitter(self)
         content_body.setContentsMargins(0, 0, 0, 0)
         content_body.setSizePolicy(
@@ -64,9 +78,11 @@ class HierarchyPage(QtWidgets.QWidget):
         content_body.setStretchFactor(0, 100)
         content_body.setStretchFactor(1, 65)
 
+        # Create main layout
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(header_widget, 0)
+        main_layout.addWidget(create_button_widget, 0)
         main_layout.addWidget(content_body, 1)
 
         btn_back.clicked.connect(self._on_back_clicked)
@@ -104,3 +120,7 @@ class HierarchyPage(QtWidgets.QWidget):
 
     def _on_filter_text_changed(self, text):
         self._folders_widget.set_name_filter(text)
+
+    def _on_jira_ticket_clicked(self, project_name):
+        print("here 1")
+        self._controller.start_jira_creation(project_name)

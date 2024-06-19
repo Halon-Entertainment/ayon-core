@@ -51,6 +51,10 @@ class ActionsQtModel(QtGui.QStandardItemModel):
             self._on_selection_project_changed,
         )
         controller.register_event_callback(
+            "selection.jira.creation",
+            self._on_jira_ticket_clicked,
+        )
+        controller.register_event_callback(
             "selection.folder.changed",
             self._on_selection_folder_changed,
         )
@@ -167,6 +171,12 @@ class ActionsQtModel(QtGui.QStandardItemModel):
         self.refreshed.emit()
 
     def _on_selection_project_changed(self, event):
+        self._selected_project_name = event["project_name"]
+        self._selected_folder_id = None
+        self._selected_task_id = None
+        self.refresh()
+
+    def _on_jira_ticket_clicked(self, event):
         self._selected_project_name = event["project_name"]
         self._selected_folder_id = None
         self._selected_task_id = None

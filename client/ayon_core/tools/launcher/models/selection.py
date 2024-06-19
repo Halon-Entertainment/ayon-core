@@ -5,6 +5,7 @@ class LauncherSelectionModel(object):
     - "selection.project.changed"
     - "selection.folder.changed"
     - "selection.task.changed"
+    - "selection.jira.creation"
     """
 
     event_source = "launcher.selection.model"
@@ -27,6 +28,14 @@ class LauncherSelectionModel(object):
         self._project_name = project_name
         self._controller.emit_event(
             "selection.project.changed",
+            {"project_name": project_name},
+            self.event_source
+        )
+
+    def start_jira_creation(self, project_name):
+        self._project_name = project_name
+        self._controller.emit_event(
+            "selection.jira.creation",
             {"project_name": project_name},
             self.event_source
         )

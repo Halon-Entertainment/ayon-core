@@ -92,6 +92,9 @@ class BaseLauncherController(
     def set_selected_project(self, project_name):
         self._selection_model.set_selected_project(project_name)
 
+    def start_jira_creation(self, project_name):
+        self._selection_model.start_jira_creation(project_name)
+
     def get_selected_folder_id(self):
         return self._selection_model.get_selected_folder_id()
 

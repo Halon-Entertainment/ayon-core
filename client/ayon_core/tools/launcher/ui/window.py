@@ -8,6 +8,7 @@ from ayon_core.tools.launcher.control import BaseLauncherController
 from .projects_widget import ProjectsWidget
 from .hierarchy_page import HierarchyPage
 from .actions_widget import ActionsWidget
+from .jira_page import JiraPage
 
 
 class LauncherWindow(QtWidgets.QWidget):
@@ -53,10 +54,14 @@ class LauncherWindow(QtWidgets.QWidget):
         # - Second page - Hierarchy (folders & tasks)
         hierarchy_page = HierarchyPage(controller, pages_widget)
 
+        # - Third page - Jira
+        jira_page = JiraPage(controller, pages_widget)
+
         pages_layout = QtWidgets.QHBoxLayout(pages_widget)
         pages_layout.setContentsMargins(0, 0, 0, 0)
         pages_layout.addWidget(projects_page, 1)
         pages_layout.addWidget(hierarchy_page, 1)
+        pages_layout.addWidget(jira_page, 1)
 
         # Actions
         actions_widget = ActionsWidget(controller, content_body)
@@ -121,6 +126,10 @@ class LauncherWindow(QtWidgets.QWidget):
             self._on_project_selection_change,
         )
         controller.register_event_callback(
+            "selection.jira.creation",
+            self._on_jira_ticket_clicked,
+        )
+        controller.register_event_callback(
             "action.trigger.started",
             self._on_action_trigger_started,
         )
@@ -140,6 +149,7 @@ class LauncherWindow(QtWidgets.QWidget):
         self._pages_layout = pages_layout
         self._projects_page = projects_page
         self._hierarchy_page = hierarchy_page
+        self._jira_page = jira_page
         self._actions_widget = actions_widget
 
         self._message_label = message_label
@@ -150,6 +160,8 @@ class LauncherWindow(QtWidgets.QWidget):
         self._page_slide_anim = page_slide_anim
 
         hierarchy_page.setVisible(not self._is_on_projects_page)
+        jira_page.setVisible(not self._is_on_projects_page)
+
         self.resize(520, 740)
 
     def showEvent(self, event):
@@ -201,6 +213,15 @@ class LauncherWindow(QtWidgets.QWidget):
         elif self._is_on_projects_page:
             self._go_to_hierarchy_page(project_name)
 
+    def _on_jira_ticket_clicked(self, event):
+        project_name = event["project_name"]
+        print('here 2')
+        print(project_name)
+        # if not project_name:
+        #     self._go_to_projects_page()
+        # elif self._is_on_projects_page:
+        self._go_to_jira_page(project_name)
+
     def _on_projects_refresh(self):
         # There is nothing to do, we're on projects page
         if self._is_on_projects_page:
@@ -240,8 +261,18 @@ class LauncherWindow(QtWidgets.QWidget):
             return
         self._is_on_projects_page = False
         self._hierarchy_page.set_page_visible(True, project_name)
+        self._jira_page.set_page_visible(False)
 
         self._start_page_slide_animation()
+
+    def _go_to_jira_page(self, project_name):
+        self._is_on_projects_page = False
+        self._hierarchy_page.set_page_visible(False, project_name)
+        self._hierarchy_page.setVisible(False)
+        self._jira_page.set_page_visible(True)
+        self._jira_page.setVisible(True)
+
+        print('End :) or :(')
 
     def _start_page_slide_animation(self):
         if self._is_on_projects_page:
@@ -295,8 +326,10 @@ class LauncherWindow(QtWidgets.QWidget):
     def _on_page_slide_finished(self):
         self._pages_layout.addWidget(self._projects_page, 1)
         self._pages_layout.addWidget(self._hierarchy_page, 1)
+        self._pages_layout.addWidget(self._jira_page, 1)
         self._projects_page.setVisible(self._is_on_projects_page)
         self._hierarchy_page.setVisible(not self._is_on_projects_page)
+        self._jira_page.setVisible(False)
 
     # def _on_history_action(self, history_data):
     #     action, session = history_data
