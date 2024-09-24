@@ -1,13 +1,12 @@
 import os
 import json
-import six
 import uuid
 
-import appdirs
 import arrow
 from qtpy import QtWidgets, QtCore, QtGui
 
 from ayon_core import style
+from ayon_core.lib import get_launcher_local_dir
 from ayon_core.resources import get_ayon_icon_filepath
 from ayon_core.tools import resources
 from ayon_core.tools.utils import (
@@ -36,12 +35,8 @@ def get_reports_dir():
         str: Path to directory where reports are stored.
     """
 
-    report_dir = os.path.join(
-        appdirs.user_data_dir("AYON", "Ynput"),
-        "publish_report_viewer"
-    )
-    if not os.path.exists(report_dir):
-        os.makedirs(report_dir)
+    report_dir = get_launcher_local_dir("publish_report_viewer")
+    os.makedirs(report_dir, exist_ok=True)
     return report_dir
 
 
@@ -302,7 +297,7 @@ class LoadedFilesModel(QtGui.QStandardItemModel):
     header_labels = ("Reports", "Created")
 
     def __init__(self, *args, **kwargs):
-        super(LoadedFilesModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Column count must be set before setting header data
         self.setColumnCount(len(self.header_labels))
@@ -350,7 +345,7 @@ class LoadedFilesModel(QtGui.QStandardItemModel):
         if col != 0:
             index = self.index(index.row(), 0, index.parent())
 
-        return super(LoadedFilesModel, self).data(index, role)
+        return super().data(index, role)
 
     def setData(self, index, value, role=None):
         if role is None:
@@ -364,13 +359,13 @@ class LoadedFilesModel(QtGui.QStandardItemModel):
                 report_item.save()
                 value = report_item.label
 
-        return super(LoadedFilesModel, self).setData(index, value, role)
+        return super().setData(index, value, role)
 
     def flags(self, index):
         # Allow editable flag only for first column
         if index.column() > 0:
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
-        return super(LoadedFilesModel, self).flags(index)
+        return super().flags(index)
 
     def _create_item(self, report_item):
         if report_item.id in self._items_by_id:
@@ -387,7 +382,7 @@ class LoadedFilesModel(QtGui.QStandardItemModel):
         if not filepaths:
             return
 
-        if isinstance(filepaths, six.string_types):
+        if isinstance(filepaths, str):
             filepaths = [filepaths]
 
         filtered_paths = []
@@ -451,7 +446,7 @@ class LoadedFilesView(QtWidgets.QTreeView):
     selection_changed = QtCore.Signal()
 
     def __init__(self, *args, **kwargs):
-        super(LoadedFilesView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.setEditTriggers(
             QtWidgets.QAbstractItemView.EditKeyPressed
             | QtWidgets.QAbstractItemView.SelectedClicked
@@ -502,11 +497,11 @@ class LoadedFilesView(QtWidgets.QTreeView):
         self._update_remove_btn()
 
     def resizeEvent(self, event):
-        super(LoadedFilesView, self).resizeEvent(event)
+        super().resizeEvent(event)
         self._update_remove_btn()
 
     def showEvent(self, event):
-        super(LoadedFilesView, self).showEvent(event)
+        super().showEvent(event)
         self._model.refresh()
         header = self.header()
         header.resizeSections(QtWidgets.QHeaderView.ResizeToContents)
@@ -548,7 +543,7 @@ class LoadedFilesWidget(QtWidgets.QWidget):
     report_changed = QtCore.Signal()
 
     def __init__(self, parent):
-        super(LoadedFilesWidget, self).__init__(parent)
+        super().__init__(parent)
 
         self.setAcceptDrops(True)
 
@@ -577,8 +572,7 @@ class LoadedFilesWidget(QtWidgets.QWidget):
             filepaths = []
             for url in mime_data.urls():
                 filepath = url.toLocalFile()
-                ext = os.path.splitext(filepath)[-1]
-                if os.path.exists(filepath) and ext == ".json":
+                if os.path.exists(filepath):
                     filepaths.append(filepath)
             self._add_filepaths(filepaths)
         event.accept()
@@ -598,7 +592,7 @@ class PublishReportViewerWindow(QtWidgets.QWidget):
     default_height = 600
 
     def __init__(self, parent=None):
-        super(PublishReportViewerWindow, self).__init__(parent)
+        super().__init__(parent)
         self.setWindowTitle("Publish report viewer")
         icon = QtGui.QIcon(get_ayon_icon_filepath())
         self.setWindowIcon(icon)

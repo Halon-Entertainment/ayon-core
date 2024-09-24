@@ -1,19 +1,6 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa E402
 """AYON lib functions."""
-# add vendor to sys path based on Python version
-import sys
-import os
-import site
-from ayon_core import AYON_CORE_ROOT
-
-# Add Python version specific vendor folder
-python_version_dir = os.path.join(
-    AYON_CORE_ROOT, "vendor", "python", "python_{}".format(sys.version[0])
-)
-# Prepend path in sys paths
-sys.path.insert(0, python_version_dir)
-site.addsitedir(python_version_dir)
 
 from .local_settings import (
     IniSettingRegistry,
@@ -22,6 +9,8 @@ from .local_settings import (
     AYONSettingsRegistry,
     OpenPypeSecureRegistry,
     OpenPypeSettingsRegistry,
+    get_launcher_local_dir,
+    get_launcher_storage_dir,
     get_local_site_id,
     get_ayon_username,
     get_openpype_username,
@@ -122,6 +111,7 @@ from .transcoding import (
     convert_ffprobe_fps_value,
     convert_ffprobe_fps_to_float,
     get_rescaled_command_arguments,
+    get_media_mime_type,
 )
 
 from .plugin_tools import (
@@ -142,6 +132,7 @@ from .ayon_info import (
     is_in_ayon_launcher_process,
     is_running_from_build,
     is_using_ayon_console,
+    is_headless_mode_enabled,
     is_staging_enabled,
     is_dev_mode_enabled,
     is_in_tests,
@@ -156,6 +147,8 @@ __all__ = [
     "AYONSettingsRegistry",
     "OpenPypeSecureRegistry",
     "OpenPypeSettingsRegistry",
+    "get_launcher_local_dir",
+    "get_launcher_storage_dir",
     "get_local_site_id",
     "get_ayon_username",
     "get_openpype_username",
@@ -222,6 +215,7 @@ __all__ = [
     "convert_ffprobe_fps_value",
     "convert_ffprobe_fps_to_float",
     "get_rescaled_command_arguments",
+    "get_media_mime_type",
 
     "compile_list_of_regexes",
 
@@ -252,6 +246,7 @@ __all__ = [
     "is_in_ayon_launcher_process",
     "is_running_from_build",
     "is_using_ayon_console",
+    "is_headless_mode_enabled",
     "is_staging_enabled",
     "is_dev_mode_enabled",
     "is_in_tests",

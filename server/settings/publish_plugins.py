@@ -57,6 +57,64 @@ class CollectFramesFixDefModel(BaseSettingsModel):
         True,
         title="Show 'Rewrite latest version' toggle"
     )
+    
+
+class ContributionLayersModel(BaseSettingsModel):
+    _layout = "compact"
+    name: str = SettingsField(title="Name")
+    order: str = SettingsField(
+        title="Order",
+        description="Higher order means a higher strength and stacks the "
+                    "layer on top.")
+
+
+class CollectUSDLayerContributionsModel(BaseSettingsModel):
+    enabled: bool = SettingsField(True, title="Enabled")
+    contribution_layers: list[ContributionLayersModel] = SettingsField(
+        title="Department Layer Orders",
+        description=(
+            "Define available department layers and their strength "
+            "ordering inside the USD contribution workflow."
+        )
+    )
+
+    @validator("contribution_layers")
+    def validate_unique_outputs(cls, value):
+        ensure_unique_names(value)
+        return value
+
+
+class AyonEntityURIModel(BaseSettingsModel):
+    use_ayon_entity_uri: bool = SettingsField(
+        title="Use AYON Entity URI",
+        description=(
+            "When enabled the USD paths written using the contribution "
+            "workflow will use ayon entity URIs instead of resolved published "
+            "paths. You can only load these if you use the AYON USD Resolver."
+        )
+    )
+
+
+class PluginStateByHostModelProfile(BaseSettingsModel):
+    _layout = "expanded"
+    # Filtering
+    host_names: list[str] = SettingsField(
+        default_factory=list,
+        title="Host names"
+    )
+    # Profile values
+    enabled: bool = SettingsField(True, title="Enabled")
+    optional: bool = SettingsField(True, title="Optional")
+    active: bool = SettingsField(True, title="Active")
+
+
+class PluginStateByHostModel(BaseSettingsModel):
+    _isGroup = True
+    plugin_state_profiles: list[PluginStateByHostModelProfile] = SettingsField(
+        default_factory=list,
+        title="Plugin enable state profiles",
+        description="Change plugin state based on host name."
+    )
 
 
 class ValidateIntentProfile(BaseSettingsModel):
@@ -515,12 +573,12 @@ class ExtractBurninDef(BaseSettingsModel):
     _isGroup = True
     _layout = "expanded"
     name: str = SettingsField("")
-    TOP_LEFT: str = SettingsField("", topic="Top Left")
-    TOP_CENTERED: str = SettingsField("", topic="Top Centered")
-    TOP_RIGHT: str = SettingsField("", topic="Top Right")
-    BOTTOM_LEFT: str = SettingsField("", topic="Bottom Left")
-    BOTTOM_CENTERED: str = SettingsField("", topic="Bottom Centered")
-    BOTTOM_RIGHT: str = SettingsField("", topic="Bottom Right")
+    TOP_LEFT: str = SettingsField("", title="Top Left")
+    TOP_CENTERED: str = SettingsField("", title="Top Centered")
+    TOP_RIGHT: str = SettingsField("", title="Top Right")
+    BOTTOM_LEFT: str = SettingsField("", title="Bottom Left")
+    BOTTOM_CENTERED: str = SettingsField("", title="Bottom Centered")
+    BOTTOM_RIGHT: str = SettingsField("", title="Bottom Right")
     filter: ExtractBurninDefFilter = SettingsField(
         default_factory=ExtractBurninDefFilter,
         title="Additional filtering"
@@ -536,7 +594,7 @@ class ExtractBurninProfile(BaseSettingsModel):
     _layout = "expanded"
     product_types: list[str] = SettingsField(
         default_factory=list,
-        title="Produt types"
+        title="Product types"
     )
     hosts: list[str] = SettingsField(
         default_factory=list,
@@ -721,6 +779,14 @@ class IntegrateHeroVersionModel(BaseSettingsModel):
     optional: bool = SettingsField(False, title="Optional")
     active: bool = SettingsField(True, title="Active")
     families: list[str] = SettingsField(default_factory=list, title="Families")
+    use_hardlinks: bool = SettingsField(
+        False, title="Use Hardlinks",
+        description="When enabled first try to make a hardlink of the version "
+                    "instead of a copy. This helps reduce disk usage, but may "
+                    "create issues.\nFor example there are known issues on "
+                    "Windows being unable to delete any of the hardlinks if "
+                    "any of the links is in use creating issues with updating "
+                    "hero versions.")
 
 
 class CleanUpModel(BaseSettingsModel):
@@ -762,13 +828,25 @@ class PublishPuginsModel(BaseSettingsModel):
         default_factory=CollectFramesFixDefModel,
         title="Collect Frames to Fix",
     )
+    CollectUSDLayerContributions: CollectUSDLayerContributionsModel = SettingsField(
+        default_factory=CollectUSDLayerContributionsModel,
+        title="Collect USD Layer Contributions",
+    )
     ValidateEditorialAssetName: ValidateBaseModel = SettingsField(
         default_factory=ValidateBaseModel,
         title="Validate Editorial Asset Name"
     )
-    ValidateVersion: ValidateBaseModel = SettingsField(
-        default_factory=ValidateBaseModel,
-        title="Validate Version"
+    ValidateVersion: PluginStateByHostModel = SettingsField(
+        default_factory=PluginStateByHostModel,
+        title="Validate Version",
+        description=(
+            "Validate that product version to integrate"
+            " is newer than latest version in AYON."
+        )
+    )
+    ValidateOutdatedContainers: PluginStateByHostModel = SettingsField(
+        default_factory=PluginStateByHostModel,
+        title="Validate Outdated Containers"
     )
     ValidateIntent: ValidateIntentModel = SettingsField(
         default_factory=ValidateIntentModel,
@@ -789,6 +867,14 @@ class PublishPuginsModel(BaseSettingsModel):
     ExtractBurnin: ExtractBurninModel = SettingsField(
         default_factory=ExtractBurninModel,
         title="Extract Burnin"
+    )
+    ExtractUSDAssetContribution: AyonEntityURIModel = SettingsField(
+        default_factory=AyonEntityURIModel,
+        title="Extract USD Asset Contribution",
+    )
+    ExtractUSDLayerContribution: AyonEntityURIModel = SettingsField(
+        default_factory=AyonEntityURIModel,
+        title="Extract USD Layer Contribution",
     )
     PreIntegrateThumbnails: PreIntegrateThumbnailsModel = SettingsField(
         default_factory=PreIntegrateThumbnailsModel,
@@ -833,7 +919,8 @@ DEFAULT_PUBLISH_VALUES = {
             "nuke",
             "photoshop",
             "resolve",
-            "tvpaint"
+            "tvpaint",
+            "substancepainter"
         ],
         "skip_hosts_headless_publish": []
     },
@@ -845,15 +932,65 @@ DEFAULT_PUBLISH_VALUES = {
         "enabled": True,
         "rewrite_version_enable": True
     },
+    "CollectUSDLayerContributions": {
+        "enabled": True,
+        "contribution_layers": [
+            # Asset layers
+            {"name": "model", "order": 100},
+            {"name": "assembly", "order": 150},
+            {"name": "groom", "order": 175},
+            {"name": "look", "order": 300},
+            {"name": "rig", "order": 100},
+            # Shot layers
+            {"name": "layout", "order": 200},
+            {"name": "animation", "order": 300},
+            {"name": "simulation", "order": 400},
+            {"name": "fx", "order": 500},
+            {"name": "lighting", "order": 600},
+        ],
+    },
     "ValidateEditorialAssetName": {
         "enabled": True,
         "optional": False,
         "active": True
     },
     "ValidateVersion": {
-        "enabled": True,
-        "optional": False,
-        "active": True
+        "plugin_state_profiles": [
+            {
+                "host_names": [
+                    "aftereffects",
+                    "blender",
+                    "houdini",
+                    "maya",
+                    "nuke",
+                    "photoshop",
+                    "substancepainter"
+                ],
+                "enabled": True,
+                "optional": False,
+                "active": True
+            }
+        ]
+    },
+    "ValidateOutdatedContainers": {
+        "plugin_state_profiles": [
+            {
+                # Default host names are based on original
+                #   filter of ValidateContainer pyblish plugin
+                "host_names": [
+                    "maya",
+                    "houdini",
+                    "nuke",
+                    "harmony",
+                    "photoshop",
+                    "aftereffects",
+                    "fusion"
+                ],
+                "enabled": True,
+                "optional": True,
+                "active": True
+            }
+        ]
     },
     "ValidateIntent": {
         "enabled": False,
@@ -894,7 +1031,8 @@ DEFAULT_PUBLISH_VALUES = {
                         "ext": "png",
                         "tags": [
                             "ftrackreview",
-                            "kitsureview"
+                            "kitsureview",
+                            "webreview"
                         ],
                         "burnins": [],
                         "ffmpeg_args": {
@@ -934,7 +1072,8 @@ DEFAULT_PUBLISH_VALUES = {
                         "tags": [
                             "burnin",
                             "ftrackreview",
-                            "kitsureview"
+                            "kitsureview",
+                            "webreview"
                         ],
                         "burnins": [],
                         "ffmpeg_args": {
@@ -946,7 +1085,10 @@ DEFAULT_PUBLISH_VALUES = {
                             "output": [
                                 "-pix_fmt yuv420p",
                                 "-crf 18",
-                                "-intra"
+                                "-c:a aac",
+                                "-b:a 192k",
+                                "-g 1",
+                                "-movflags faststart"
                             ]
                         },
                         "filter": {
@@ -1044,6 +1186,12 @@ DEFAULT_PUBLISH_VALUES = {
             }
         ]
     },
+    "ExtractUSDAssetContribution": {
+        "use_ayon_entity_uri": False,
+    },
+    "ExtractUSDLayerContribution": {
+        "use_ayon_entity_uri": False,
+    },
     "PreIntegrateThumbnails": {
         "enabled": True,
         "integrate_profiles": []
@@ -1073,7 +1221,8 @@ DEFAULT_PUBLISH_VALUES = {
             "layout",
             "mayaScene",
             "simpleUnrealTexture"
-        ]
+        ],
+        "use_hardlinks": False
     },
     "CleanUp": {
         "paterns": [],
