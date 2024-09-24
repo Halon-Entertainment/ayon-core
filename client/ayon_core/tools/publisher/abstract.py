@@ -13,8 +13,11 @@ from typing import (
 
 from ayon_core.lib import AbstractAttrDef
 from ayon_core.host import HostBase
-from ayon_core.pipeline.create import CreateContext, CreatedInstance
-from ayon_core.pipeline.create.context import ConvertorItem
+from ayon_core.pipeline.create import (
+    CreateContext,
+    CreatedInstance,
+    ConvertorItem,
+)
 from ayon_core.tools.common_models import (
     FolderItem,
     TaskItem,
@@ -164,6 +167,12 @@ class AbstractPublisherBackend(AbstractPublisherCommon):
         task_name: str,
         sender: Optional[str] = None
     ) -> Union[TaskItem, None]:
+        pass
+
+    @abstractmethod
+    def get_project_entity(
+        self, project_name: str
+    ) -> Union[Dict[str, Any], None]:
         pass
 
     @abstractmethod
